@@ -52,11 +52,17 @@ namespace ContactsServer.Controllers
         public UserContact UpdateContact([FromBody] UserContact contact)
         {
             //If contact is null the request is bad
-            if (contact != null)
+            if (contact == null)
             {
                 Response.StatusCode = (int)System.Net.HttpStatusCode.BadRequest;
                 return null;
             }
+
+            //foreach (ContactPhone cp in contact.ContactPhones)
+            //{
+            //    cp.PhoneType = null;
+            //}
+
             User user = HttpContext.Session.GetObject<User>("theUser");
             //Check if user logged in and its ID is the same as the contact user ID
             if (user != null && user.Id == contact.UserId)
@@ -85,11 +91,11 @@ namespace ContactsServer.Controllers
 
 
         [Route("RemoveContact")]
-        [HttpGet]
+        [HttpPost]
         public void RemoveContact([FromBody] UserContact contact)
         {
             //If contact is null the request is bad
-            if (contact != null)
+            if (contact == null)
             {
                 Response.StatusCode = (int)System.Net.HttpStatusCode.BadRequest;
                 return;
@@ -105,6 +111,7 @@ namespace ContactsServer.Controllers
                 }
                 //now remove the contact it self
                 context.UserContacts.Remove(contact);
+                context.SaveChanges();
             }
             else
             {
@@ -114,11 +121,11 @@ namespace ContactsServer.Controllers
         }
 
         [Route("RemoveContactPhone")]
-        [HttpGet]
+        [HttpPost]
         public void RemoveContactPhone([FromBody] ContactPhone phone)
         {
             //If phone is null the request is bad
-            if (phone != null)
+            if (phone == null)
             {
                 Response.StatusCode = (int)System.Net.HttpStatusCode.BadRequest;
                 return;
@@ -134,8 +141,11 @@ namespace ContactsServer.Controllers
             //Check if user logged in and its ID is the same as the contact user ID
             if (user != null && user.Id == contact.UserId)
             {
+                //Remove the tracking over the entities so the remove will work
+                context.ChangeTracker.Clear();
                 //remove the phone
                 context.ContactPhones.Remove(phone);
+                context.SaveChanges();
             }
             else
             {

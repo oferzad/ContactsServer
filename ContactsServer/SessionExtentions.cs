@@ -2,6 +2,7 @@
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 public static class SessionExtensions
 {
@@ -10,17 +11,29 @@ public static class SessionExtensions
     //It does not provide access to any private members in the class! Only replace the alternative of having a static function that gets the object as first param.
     public static T GetObject<T>(this ISession session, string key)
     {
+        JsonSerializerOptions options = new JsonSerializerOptions
+        {
+            ReferenceHandler = ReferenceHandler.Preserve,
+            PropertyNameCaseInsensitive = true
+        };
+
         var data = session.GetString(key);
         if (data == null)
         {
             return default(T);
         }
-        return JsonSerializer.Deserialize<T>(data);
+        return JsonSerializer.Deserialize<T>(data,options);
     }
 
     public static void SetObject(this ISession session, string key, object value)
     {
-        session.SetString(key, JsonSerializer.Serialize(value));
+        JsonSerializerOptions options = new JsonSerializerOptions
+        {
+            ReferenceHandler = ReferenceHandler.Preserve,
+            PropertyNameCaseInsensitive = true
+        };
+
+        session.SetString(key, JsonSerializer.Serialize(value, options));
     }
 
     // Convert an object to a byte array
