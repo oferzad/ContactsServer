@@ -52,8 +52,8 @@ namespace ContactsServer
             string connectionString = this.Configuration.GetConnectionString("ContactsDB");
 
             services.AddDbContext<ContactsDBContext>(options => options
-                                                                .UseSqlServer(connectionString)
-                                                                .UseLazyLoadingProxies());
+                                                                .UseSqlServer(connectionString));
+                                                                //.UseLazyLoadingProxies());
             #endregion
         }
 

@@ -12,7 +12,10 @@ namespace ContactsServerBL.Models
     {
         public User Login(string email, string pswd)
         {
-            User user = this.Users.Where(u => u.Email == email && u.UserPswd == pswd).FirstOrDefault();
+            User user = this.Users
+                .Include(us => us.UserContacts)
+                .ThenInclude(uc => uc.ContactPhones)
+                .Where(u => u.Email == email && u.UserPswd == pswd).FirstOrDefault();
 
             return user;
         }

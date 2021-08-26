@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 //Add the below
 using ContactsServerBL.Models;
@@ -58,18 +59,34 @@ namespace ContactsServer.Controllers
                 return null;
             }
 
-            //foreach (ContactPhone cp in contact.ContactPhones)
-            //{
-            //    cp.PhoneType = null;
-            //}
-
             User user = HttpContext.Session.GetObject<User>("theUser");
             //Check if user logged in and its ID is the same as the contact user ID
             if (user != null && user.Id == contact.UserId)
             {
-                //update or add contact to the DB
-                context.UserContacts.Update(contact);
+                //update contact to the DB by marking all entities that should be modified or added
+                if (contact.ContactId > 0)
+                {
+                    context.Entry(contact).State = EntityState.Modified;
+                }
+                else
+                {
+                    context.Entry(contact).State = EntityState.Added;
+                }
+
+                foreach (ContactPhone cp in contact.ContactPhones)
+                {
+                        if (cp.PhoneId > 0)
+                        {
+                            context.Entry(cp).State = EntityState.Modified;
+                        }
+                        else
+                        {
+                            context.Entry(cp).State = EntityState.Added;
+                        }
+                }
+                //Save change into the db
                 context.SaveChanges();
+
                 //return the contact with its new ID if that was a new contact
                 return contact;
             }
@@ -84,8 +101,6 @@ namespace ContactsServer.Controllers
         [HttpGet]
         public List<PhoneType> GetPhoneTypes()
         {
-            //Disable lazy loading so not all of the DB will be read!
-            this.context.ChangeTracker.LazyLoadingEnabled = false;
             return context.PhoneTypes.ToList();
         }
 
@@ -107,10 +122,10 @@ namespace ContactsServer.Controllers
                 //First remove all contact phones
                 foreach (ContactPhone c in contact.ContactPhones)
                 {
-                    context.ContactPhones.Remove(c);
+                    context.Entry(c).State = EntityState.Deleted;
                 }
                 //now remove the contact it self
-                context.UserContacts.Remove(contact);
+                context.Entry(contact).State = EntityState.Deleted;
                 context.SaveChanges();
             }
             else
@@ -125,26 +140,18 @@ namespace ContactsServer.Controllers
         public void RemoveContactPhone([FromBody] ContactPhone phone)
         {
             //If phone is null the request is bad
-            if (phone == null)
+            if (phone == null || phone.Contact == null)
             {
                 Response.StatusCode = (int)System.Net.HttpStatusCode.BadRequest;
                 return;
             }
-
-            //Check if phone exist in DB and who is the user who owns it
-            UserContact contact = context.UserContacts.Where(c => c.ContactId == phone.ContactId).FirstOrDefault();
-
-            if (contact == null)
-                return;
-
+            
             User user = HttpContext.Session.GetObject<User>("theUser");
             //Check if user logged in and its ID is the same as the contact user ID
-            if (user != null && user.Id == contact.UserId)
+            if (user != null && user.Id == phone.Contact.UserId)
             {
-                //Remove the tracking over the entities so the remove will work
-                context.ChangeTracker.Clear();
                 //remove the phone
-                context.ContactPhones.Remove(phone);
+                context.Entry(phone).State = EntityState.Deleted;
                 context.SaveChanges();
             }
             else
