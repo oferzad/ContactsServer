@@ -23,6 +23,9 @@ namespace ContactsServer.Controllers
             this.context = context;
         }
         #endregion
+        
+        //set the contact default photo image name
+        public const string DEFAULT_PHOTO = "defaultphoto.jpg";
 
         [Route("Login")]
         [HttpGet]
@@ -63,6 +66,7 @@ namespace ContactsServer.Controllers
             //Check if user logged in and its ID is the same as the contact user ID
             if (user != null && user.Id == contact.UserId)
             {
+                
                 //update contact to the DB by marking all entities that should be modified or added
                 if (contact.ContactId > 0)
                 {
@@ -86,6 +90,12 @@ namespace ContactsServer.Controllers
                 }
                 //Save change into the db
                 context.SaveChanges();
+
+
+                //Now check if an image exist for the contact (photo). If not, set the default image!
+                var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", DEFAULT_PHOTO);
+                var targetPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", $"{contact.ContactId}.jpg");
+                System.IO.File.Copy(sourcePath, targetPath);
 
                 //return the contact with its new ID if that was a new contact
                 return contact;
@@ -127,6 +137,10 @@ namespace ContactsServer.Controllers
                 //now remove the contact it self
                 context.Entry(contact).State = EntityState.Deleted;
                 context.SaveChanges();
+
+                //now delete the photo image of the contact 
+                var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", $"{contact.ContactId}.jpg");
+                System.IO.File.Delete(sourcePath);
             }
             else
             {
@@ -178,12 +192,17 @@ namespace ContactsServer.Controllers
                 try
                 {
                     var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", file.FileName);
-                    var stream = new FileStream(path, FileMode.Create);
-                    await file.CopyToAsync(stream);
+                    using (var stream = new FileStream(path, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+                        
+                    
                     return Ok(new { length = file.Length, name = file.FileName });
                 }
-                catch
+                catch(Exception e)
                 {
+                    Console.WriteLine(e.Message);
                     return BadRequest();
                 }
             }

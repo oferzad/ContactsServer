@@ -17,6 +17,10 @@ CONSTRAINT UC_Email UNIQUE(Email)
 
 Go
 
+INSERT INTO Users (Email, FirstName, LastName, UserPswd)
+VALUES ('kuku@kaka.com', N'קוקו', N'קקה', N'1234')
+GO
+
 Create Table UserContacts (
 UserID int not null FOREIGN KEY REFERENCES Users(ID),
 ContactID int IDENTITY Primary Key,
