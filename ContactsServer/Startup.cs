@@ -14,7 +14,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ContactsServerBL.Models;
-
+//for the chat
+using ContactsServer.Hubs;
 namespace ContactsServer
 {
     public class Startup
@@ -53,8 +54,11 @@ namespace ContactsServer
 
             services.AddDbContext<ContactsDBContext>(options => options
                                                                 .UseSqlServer(connectionString));
-                                                                //.UseLazyLoadingProxies());
+            //.UseLazyLoadingProxies());
             #endregion
+
+            //Add SignalR
+            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -72,6 +76,8 @@ namespace ContactsServer
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                //for the chat
+                endpoints.MapHub<ChatHub>("/chat");
             });
         }
     }
